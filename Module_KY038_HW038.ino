@@ -1,41 +1,37 @@
-void setup() {
-  // Inicializa a comunicação serial
-  Serial.begin(9600);
+#include <Arduino.h>
+#include <Wire.h>
+#include "mky038.h"
+#include "Serial/package.h"
 
-  // Define o pino do sensor como entrada
-  pinMode(15, INPUT);
-  pinMode(2, INPUT);
+mKY* ky = nullptr;
+constexpr int port_KY038 = GPIO_NUM_27; // mic
+constexpr int port_HW072 = GPIO_NUM_26; // ldr
+
+const auto this_device = CustomSerial::device_id::KY038_HW038_SENSOR;
+  
+void send_to_wire_on_request();
+
+void setup()
+{
+  CustomSerial::begin_slave(this_device, send_to_wire_on_request);
+  ky = new mKY(port_KY038);
+  pinMode(port_HW072, INPUT);
 }
 
-void loop() {
-  // Lê a tensão do sensor
-  int KY038 = analogRead(15);
+void loop() { vTaskDelete(NULL); }
 
-  // Converte a tensão em dB
-  float dbValue = 20 * log10(KY038 / 1023.0);
+void send_to_wire_on_request()
+{
+  //const auto ky038 = analogRead(port_KY038);
+  const auto hw072 = analogRead(port_HW072);
 
-  // Exibe o valor em dB no Serial Monitor
-  Serial.print("Intensidade do som: ");
-  Serial.print(dbValue);
-  Serial.println(" dB");
+  //const float ky038_ln = 100.0f * ky038 / 4095.0f;//20.0f * log10(ky038 / 1023.0f);
+  const unsigned long long hw072_bl = hw072 > 400.0f ? 1 : 0;
 
-  int HW072 = analogRead(2);
+  CustomSerial::command_package cmd(this_device,
+    "/mic", ky->get_vol(), // around "30" when no noise, up to 60 when high noise.
+    "/ldr", hw072_bl
+  );
 
-  Serial.print("Analog reading = ");
-  Serial.print(HW072);
-
-  if (HW072 < 100) {
-    Serial.println(" - Very bright");
-  } else if (HW072 < 200) {
-    Serial.println(" - Bright");
-  } else if (HW072 < 500) {
-    Serial.println(" - Light");
-  } else if (HW072 < 800) {
-    Serial.println(" - Dim");
-  } else {
-    Serial.println(" - Dark");
-  }
-
-  // Aguarda 1 segundo
-  delay(1000);
+  CustomSerial::write(cmd);
 }

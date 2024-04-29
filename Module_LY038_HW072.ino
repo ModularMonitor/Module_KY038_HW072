@@ -50,7 +50,7 @@ void callback(void* rw, const uint8_t expects, const char* received, const uint8
         const auto hw072 = analogRead(port_HW072);
         const uint64_t val = hw072 > 400.0f ? 1 : 0;
         
-        Command cmd("/hw072/on", val);
+        Command cmd("/hw072/off", val);
         w.slave_reply_from_callback(cmd);
         //Serial.printf("Received request {%zu}\nReplying with %llu\n", req.get_offset(), val);
     }

@@ -19,14 +19,15 @@ void setup()
     while(!Serial);
     
     Serial.printf("Starting SLAVE\n");
+    
+    ky = new mKY(port_KY038);
+    pinMode(port_HW072, INPUT);
+    
     wire = new PackagedWired(config()
         .set_slave(this_device)
         .set_slave_callback(callback)
         .set_led(2)
     );
-    
-    ky = new mKY(port_KY038);
-    pinMode(port_HW072, INPUT);
 }
 
 void callback(void* rw, const uint8_t expects, const char* received, const uint8_t length)
@@ -48,9 +49,9 @@ void callback(void* rw, const uint8_t expects, const char* received, const uint8
     case 1:
     {
         const auto hw072 = analogRead(port_HW072);
-        const uint64_t val = hw072 > 400.0f ? 1 : 0;
+        const uint64_t val = hw072 > 400.0f ? 0 : 1;
         
-        Command cmd("/hw072/off", val);
+        Command cmd("/hw072/on", val);
         w.slave_reply_from_callback(cmd);
         //Serial.printf("Received request {%zu}\nReplying with %llu\n", req.get_offset(), val);
     }
